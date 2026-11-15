@@ -10,6 +10,7 @@ const skel = () => '<div class="grid"><div class="skel"></div><div class="skel">
 const img = id => /^[\w-]{10,}$/.test(id || '') ? 'https://lh3.googleusercontent.com/d/' + id : '';
 let tab = sessionStorage.getItem('tab');
 function tabs(){ const t = [];
+  if (has('pengurus','bendahara')) t.push(['dasbor','Ringkasan']);
   if (has('pengurus','petugas_jadwal','petugas_ibadah')) t.push(['jadwal','Jadwal']);
   if (has('pengurus','bendahara')) t.push(['kas','Kas']);
   if (has('pengurus','petugas_jadwal')) t.push(['petugas','Petugas'], ['agenda','Agenda'], ['pengumuman','Pengumuman']);
@@ -40,6 +41,9 @@ function papan(c){
   timer = setInterval(() => { const el = $('#cd'); if (!el) return clearInterval(timer); if (--left < 0) return render(); el.textContent = fmt(left); }, 1000);
   return `<div class="sh">${list.map((x,i) => `<div class="sc ${i === nx ? 'nx' : ''}"><b>${x[0]}</b><div class="num">${hh(x[1])}</div>${i === nx ? `<span class="pill Menunggu">Berikutnya</span><div class="num" id="cd">${fmt(left)}</div>` : ''}</div>`).join('')}</div><p class="muted">Perhitungan metode Kemenag RI sesuai koordinat masjid.</p>`;
 }
+function bars(d){ const W = 520, H = 190, m = Math.max(1, ...d.flatMap(x => [x.masuk, x.keluar])), gap = (W - 40) / Math.max(1, d.length);
+  return `<svg viewBox="0 0 ${W} ${H + 24}" role="img" aria-label="Kas masuk dan keluar per bulan" style="width:100%;max-width:640px">${d.map((x,i) => { const a = x.masuk/m*H, b = x.keluar/m*H, c = 20 + i*gap + gap/2;
+    return `<rect x="${c-24}" y="${H-a}" width="22" height="${a}" rx="4" fill="#0B5D3B"><title>Masuk ${rp(x.masuk)}</title></rect><rect x="${c+2}" y="${H-b}" width="22" height="${b}" rx="4" fill="#C9A227"><title>Keluar ${rp(x.keluar)}</title></rect><text x="${c}" y="${H+16}" font-size="11" text-anchor="middle" fill="#6B7280">${esc(x.b.slice(5))}/${esc(x.b.slice(2,4))}</text>`; }).join('')}</svg><div class="muted"><span style="color:#0B5D3B">■</span> Masuk &nbsp;<span style="color:#C9A227">■</span> Keluar</div>`; }
 let pub = null;
 async function loadPub(){ if (!pub) { const r = await Api.get('publik.beranda'); if (!r.success) throw new Error(r.message); pub = r.data; } return pub; }
 
@@ -57,11 +61,11 @@ const routes = {
     <div><h2>Pengumuman</h2>${d.pengumuman.length ? d.pengumuman.slice(0,4).map(p => `<div class="card ann ${p.penting === 'ya' ? 'pen' : ''}"><b>${esc(p.judul)}</b><div class="muted">${esc(tgl(p.tanggal))}</div><p>${esc(p.isi)}</p></div>`).join('') : '<div class="card muted">Belum ada pengumuman.</div>'}</div></div>
     <h2 style="margin-top:24px">Transparansi kas</h2>${kasCards(d.kas)}`; },
   async jadwal(){ const d = await loadPub(); return `<h1>Jadwal ibadah &amp; kajian</h1>${papan(d.pengaturan)}<h2 style="margin-top:20px">Jadwal petugas</h2>${jadwalRows(d.jadwal)}`; },
-  async kas(){ const d = await loadPub(); return `<h1>Transparansi kas masjid</h1><p class="muted">Ringkasan hanya menampilkan total. Rincian transaksi dan nama donatur dikelola bendahara.</p>${kasCards(d.kas)}`; },
+  async kas(){ const d = await loadPub(); return `<h1>Transparansi kas masjid</h1><p class="muted">Ringkasan hanya menampilkan total. Rincian transaksi dan nama donatur dikelola bendahara.</p>${kasCards(d.kas)}<div class="card" style="margin-top:16px"><b>Kas 6 bulan terakhir</b>${bars(d.kas.bulanan || [])}</div>`; },
   async khutbah(){ const d = await loadPub(), l = d.jadwal.filter(j => j.jenis === 'Sholat Jumat'), f = l[0], ft = n => (d.foto && d.foto[n]) ? img(d.foto[n]) : '';
     return `<h1>Khutbah Jumat</h1>` + (f ? `<section class="hero" style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">${ft(f.khatib) ? `<img class="av" src="${ft(f.khatib)}" alt="Foto khatib">` : ''}<div><span class="pill Menunggu">${esc(tgl(f.tanggal))} · ${esc(f.waktu)} WIB</span><h2 style="margin-top:8px">${esc(f.tema || 'Tema akan diumumkan')}</h2><p>Khatib: ${esc(f.khatib)}<br>Imam: ${esc(f.imam)}<br>Muadzin: ${esc(f.muadzin)}</p></div></section><h2>Jadwal berikutnya</h2>${jadwalRows(l.slice(1))}` : '<div class="card muted">Belum ada jadwal sholat Jumat.</div>'); },
   async agenda(){ const d = await loadPub();
-    return `<h1>Agenda kegiatan</h1>` + (d.agenda && d.agenda.length ? `<div class="grid">${d.agenda.map(a => `<div class="card"><span class="pill Menunggu">${esc(tgl(a.tanggal))}${a.tanggal_selesai && a.tanggal_selesai !== a.tanggal ? ' – ' + esc(tgl(a.tanggal_selesai)) : ''}</span><h2 style="margin-top:8px">${esc(a.judul)}</h2><p class="muted">${esc(a.lokasi)}${a.pic ? ' · PIC: ' + esc(a.pic) : ''}</p><p>${esc(a.deskripsi)}</p></div>`).join('')}</div>` : '<div class="card muted">Belum ada agenda mendatang.</div>'); },
+    return `<h1>Agenda kegiatan</h1>` + (d.agenda && d.agenda.length ? `<div class="grid">${d.agenda.map(a => `<div class="card">${img(a.poster_id) ? `<img src="${img(a.poster_id)}" alt="Poster" style="width:100%;border-radius:10px;margin-bottom:8px">` : ''}<span class="pill Menunggu">${esc(tgl(a.tanggal))}${a.tanggal_selesai && a.tanggal_selesai !== a.tanggal ? ' – ' + esc(tgl(a.tanggal_selesai)) : ''}</span><h2 style="margin-top:8px">${esc(a.judul)}</h2><p class="muted">${esc(a.lokasi)}${a.pic ? ' · PIC: ' + esc(a.pic) : ''}</p><p>${esc(a.deskripsi)}</p></div>`).join('')}</div>` : '<div class="card muted">Belum ada agenda mendatang.</div>'); },
   async panel(){ return me() ? panel() : login(); }
 };
 
@@ -105,20 +109,23 @@ async function panel(){
     h += `<h2 style="margin-top:24px">Kas</h2>`;
     if (has('bendahara')) h += `<form class="card" id="fKas"><div class="row"><label>Tanggal<input type="date" name="tanggal" required></label>
       <label>Jenis<select name="jenis"><option>Masuk</option><option>Keluar</option></select></label><label>Kategori<input name="kategori" required maxlength="60" placeholder="Infaq Jumat, Listrik, …"></label>
-      <label>Nominal (Rp)<input type="number" name="nominal" min="1" required></label></div><label>Keterangan<input name="keterangan" maxlength="200"></label>
+      <label>Nominal (Rp)<input type="number" name="nominal" min="1" required></label></div><label>Keterangan<input name="keterangan" maxlength="200"></label><label>Foto bukti / nota (wajib untuk pengeluaran)<input type="file" name="bukti" accept="image/*"></label>
       <button class="btn" type="submit">Simpan transaksi</button><span class="muted">Pengeluaran di atas Rp 1.000.000 menunggu persetujuan pengurus.</span></form>`;
     h += k.data.length ? `<div class="wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Tanggal</th><th>Kategori</th><th class="r">Nominal</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${k.data.map(x =>
       `<tr><td>${esc(tgl(x.tanggal))}</td><td><span class="pill ${esc(x.jenis)}">${esc(x.jenis)}</span> ${esc(x.kategori)}<br><span class="muted">${esc(x.keterangan)}</span></td>
-      <td class="r">${rp(x.nominal)}</td><td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td>${x.status === 'Menunggu' && has('pengurus') ? `<button class="btn s" data-act="putus" data-id="${esc(x.id)}" data-p="Setujui">Setujui</button> <button class="btn s d" data-act="putus" data-id="${esc(x.id)}" data-p="Tolak">Tolak</button>` : ''}
+      <td class="r">${rp(x.nominal)}</td><td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td>${x.bukti_id ? `<button class="btn s o" data-act="bukti" data-id="${esc(x.id)}">Bukti</button> ` : ''}${x.status === 'Menunggu' && has('pengurus') ? `<button class="btn s" data-act="putus" data-id="${esc(x.id)}" data-p="Setujui">Setujui</button> <button class="btn s d" data-act="putus" data-id="${esc(x.id)}" data-p="Tolak">Tolak</button>` : ''}
       ${x.status !== 'Dibatalkan' && x.status !== 'Ditolak' ? `<button class="btn s o" data-act="batal" data-id="${esc(x.id)}">Batalkan</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="card muted" style="margin-top:12px">Belum ada transaksi.</div>';
   }
   const H = t => `<h2 style="margin-top:24px">${t}</h2>`;
+  if (tab === 'dasbor') { const r = await Api.post('dashboard'); if (!r.success) return fail(r); const c = r.data, kt = Object.entries(c.kategori).sort((a,b) => b[1] - a[1]), tot = kt.reduce((a,x) => a + x[1], 0) || 1;
+    h += H('Ringkasan') + kasCards(c.kas) + `<div class="grid" style="margin-top:16px"><div class="card"><div class="muted">Menunggu persetujuan</div><div class="num">${c.menunggu}</div>${c.menunggu && has('pengurus') ? '<button class="btn s" data-act="tab" data-t="kas">Tinjau</button>' : ''}</div><div class="card"><div class="muted">Jadwal perlu pengganti</div><div class="num ${c.perluPengganti ? 'out' : ''}">${c.perluPengganti}</div></div></div>
+      <div class="grid" style="margin-top:16px"><div class="card"><b>Kas 6 bulan terakhir</b>${bars(c.bulanan)}</div><div class="card"><b>Pengeluaran bulan ini per kategori</b>${kt.length ? kt.map(x => `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between"><span>${esc(x[0])}</span><span class="r">${rp(x[1])}</span></div><div style="height:8px;background:var(--gs);border-radius:99px"><div style="height:8px;width:${Math.round(x[1]/tot*100)}%;background:var(--g);border-radius:99px"></div></div></div>`).join('') : '<p class="muted">Belum ada pengeluaran bulan ini.</p>'}</div></div>`; }
   if (tab === 'petugas') { const r = await Api.post('petugas.daftar'); if (!r.success) return fail(r);
     h += H('Petugas &amp; foto') + `<form class="card" id="fPetugas"><div class="row"><label>Nama (sama persis dengan di jadwal)<input name="nama" required maxlength="80"></label><label>Kategori<select name="kategori"><option>Imam</option><option>Khatib</option><option>Muadzin</option><option>Penceramah</option></select></label></div><button class="btn" type="submit">Tambah petugas</button></form>
       <div class="wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Foto</th><th>Nama</th><th>Kategori</th><th>Ganti foto</th></tr></thead><tbody>${r.data.map(x => `<tr><td>${img(x.foto_id) ? `<img class="th" src="${img(x.foto_id)}" alt="">` : '<span class="muted">—</span>'}</td><td>${esc(x.nama)}</td><td>${esc(x.kategori)}</td><td><input type="file" accept="image/jpeg,image/png,image/webp" data-pf="${esc(x.nama)}"></td></tr>`).join('')}</tbody></table></div>`; }
   if (tab === 'agenda') { const d = await loadPub();
     h += H('Agenda kegiatan') + `<form class="card" id="fAgenda"><label>Judul<input name="judul" required maxlength="120"></label><div class="row"><label>Mulai<input type="date" name="tanggal" required></label><label>Selesai<input type="date" name="tanggal_selesai"></label><label>Lokasi<input name="lokasi" maxlength="100"></label><label>PIC<input name="pic" maxlength="80"></label></div><label>Deskripsi<textarea name="deskripsi" rows="3" maxlength="290"></textarea></label><button class="btn" type="submit">Simpan agenda</button></form>
-      <div class="grid" style="margin-top:12px">${(d.agenda || []).map(a => `<div class="card"><b>${esc(a.judul)}</b><div class="muted">${esc(tgl(a.tanggal))} · ${esc(a.lokasi)}</div></div>`).join('') || '<div class="card muted">Belum ada agenda.</div>'}</div>`; }
+      <div class="grid" style="margin-top:12px">${(d.agenda || []).map(a => `<div class="card">${img(a.poster_id) ? `<img src="${img(a.poster_id)}" alt="Poster" style="width:100%;border-radius:10px">` : ''}<b>${esc(a.judul)}</b><div class="muted">${esc(tgl(a.tanggal))} · ${esc(a.lokasi)}</div><label>Poster<input type="file" accept="image/*" data-ap="${esc(a.id)}"></label></div>`).join('') || '<div class="card muted">Belum ada agenda.</div>'}</div>`; }
   if (tab === 'pengumuman') h += H('Pengumuman') + `<form class="card" id="fPeng"><label>Judul<input name="judul" required maxlength="120"></label><label>Isi<textarea name="isi" rows="4" required maxlength="290"></textarea></label><label><span><input type="checkbox" name="penting" style="width:auto"> Tandai sebagai penting</span></label><button class="btn" type="submit">Terbitkan</button></form>`;
   if (tab === 'pengguna') { const r = await Api.post('pengguna.daftar'); if (!r.success) return fail(r);
     h += H('Pengguna &amp; peran') + `<form class="card" id="fUser"><div class="row"><label>Email Google<input type="email" name="email" required></label><label>Nama (sama persis dengan di jadwal)<input name="nama" required maxlength="80"></label><label>Status<select name="aktif"><option value="ya">Aktif</option><option value="tidak">Nonaktif</option></select></label></div>
@@ -141,8 +148,10 @@ document.addEventListener('click', e => {
   if (a === 'putus') aksi('kas.setujui', {id:b.dataset.id, putusan:b.dataset.p}, 'Keputusan tersimpan');
   if (a === 'batal') { const c = prompt('Alasan pembatalan (wajib diisi):'); if (c) aksi('kas.batalkan', {id:b.dataset.id, catatan:c}, 'Transaksi dibatalkan'); }
 });
-document.addEventListener('submit', e => {
-  e.preventDefault(); const f = e.target, fd = new FormData(f), d = Object.fromEntries(fd); const btn = f.querySelector('button'); btn.disabled = true;
+document.addEventListener('submit', async e => {
+  e.preventDefault(); const f = e.target, fd = new FormData(f), d = Object.fromEntries(fd); const btn = f.querySelector('button[type=submit]'); btn.disabled = true;
+  delete d.bukti; const fi = f.querySelector('input[type=file]');
+  if (fi && fi.files[0]) { try { d.b64 = await compress(fi.files[0]); d.mime = 'image/jpeg'; } catch (x) { toast('Gambar tidak dapat dibaca', true); btn.disabled = false; return; } }
   d.peran = fd.getAll('peran'); d.penting = fd.get('penting') ? 'ya' : '';
   const m = {fJadwal:['jadwal.simpan','Jadwal tersimpan'], fKas:['kas.simpan','Transaksi tersimpan'], fPeng:['pengumuman.simpan','Pengumuman terbit'], fUser:['pengguna.simpan','Pengguna tersimpan'], fSet:['pengaturan.simpan','Pengaturan tersimpan'], fPetugas:['petugas.simpan','Petugas ditambahkan'], fAgenda:['agenda.simpan','Agenda tersimpan']}[f.id];
   aksi(m[0], d, m[1]).finally(() => btn.disabled = false);
@@ -168,3 +177,10 @@ render();
 
 document.addEventListener('change', async e => { const i = e.target.closest('[data-pf]'); if (!i || !i.files[0]) return;
   try { toast('Mengunggah…'); await aksi('petugas.foto', {nama:i.dataset.pf, mime:'image/jpeg', b64:await compress(i.files[0])}, 'Foto tersimpan'); } catch (x) { toast('Gambar tidak dapat dibaca', true); } });
+
+document.addEventListener('change', async e => { const i = e.target.closest('[data-ap]'); if (!i || !i.files[0]) return;
+  try { toast('Mengunggah…'); await aksi('agenda.poster', {id:i.dataset.ap, mime:'image/jpeg', b64:await compress(i.files[0])}, 'Poster tersimpan'); } catch (x) { toast('Gambar tidak dapat dibaca', true); } });
+document.addEventListener('click', async e => { const b = e.target.closest('[data-act=bukti]'); if (!b) return;
+  const r = await Api.post('kas.bukti', {id:b.dataset.id}); if (!r.success || !/^image\//.test(r.data.mime)) return toast(r.message || 'Bukti tidak dapat ditampilkan', true);
+  const v = document.createElement('div'); v.style.cssText = 'position:fixed;inset:0;background:#000b;display:grid;place-items:center;z-index:20;padding:16px;cursor:pointer';
+  v.innerHTML = `<img alt="Bukti transaksi" style="max-width:100%;max-height:90vh;border-radius:12px" src="data:${esc(r.data.mime)};base64,${r.data.b64}">`; v.onclick = () => v.remove(); document.body.appendChild(v); });
