@@ -156,8 +156,8 @@ async function panel(){
   if (tab === 'pengaturan') { const r = await Api.post('pengaturan.daftar'); if (!r.success) return fail(r); const c = r.data;
     const up = (k,t) => `<div class="card"><b>${t}</b>${img(c[k + '_id']) ? `<p><img src="${img(c[k + '_id'])}" alt="${t}" style="max-width:100%;max-height:140px;border-radius:10px"></p>` : '<p class="muted">Belum ada gambar.</p>'}<input type="file" accept="image/jpeg,image/png,image/webp" data-up="${k}"><div class="muted">JPG/PNG/WebP, otomatis dikecilkan.</div></div>`;
     h += H('Pengaturan masjid') + `<form class="card" id="fSet"><div class="row"><label>Nama masjid<input name="nama" value="${esc(c.nama)}" maxlength="80"></label><label>Telepon<input name="telepon" value="${esc(c.telepon)}" maxlength="30"></label><label>Batas persetujuan (Rp)<input type="number" name="ambang" value="${esc(c.ambang)}" min="1"></label></div><div class="row"><label>Lintang (lat) masjid<input name="lat" value="${esc(c.lat)}" placeholder="-6.2088"></label><label>Bujur (lon) masjid<input name="lon" value="${esc(c.lon)}" placeholder="106.8456"></label><label>Zona waktu<select name="zona"><option value="7" ${c.zona !== '8' && c.zona !== '9' ? 'selected' : ''}>WIB (7)</option><option value="8" ${c.zona === '8' ? 'selected' : ''}>WITA (8)</option><option value="9" ${c.zona === '9' ? 'selected' : ''}>WIT (9)</option></select></label></div><label>Alamat<input name="alamat" value="${esc(c.alamat)}" maxlength="200"></label><button class="btn" type="submit">Simpan pengaturan</button></form>
-      <div class="grid" style="margin-top:12px">${up('logo','Logo masjid')}${up('foto_masjid','Foto masjid (latar beranda)')}</div>`; }
-  return `<div class="shell"><aside class="side">${T.map(x => `<button class="${x[0] === tab ? 'on' : ''}" data-act="tab" data-t="${x[0]}">${x[1]}</button>`).join('')}</aside><div>${h}</div></div>`;
+      <div class="grid" style="margin-top:12px">${up('logo','Logo masjid')}${up('foto_masjid','Foto masjid (latar beranda)')}</div><div class="card" style="margin-top:12px"><b>Pencadangan data</b><p class="muted">Cadangan otomatis tiap Minggu dini hari (8 salinan terakhir disimpan di Drive). Terakhir: ${c.cadangan ? esc(new Date(c.cadangan).toLocaleString('id-ID')) : 'belum ada'}</p><button class="btn o" type="button" data-act="backup">Cadangkan sekarang</button></div>`; }
+  return `<div class="shell"><aside class="side">${T.map(x => `<button class="${x[0] === tab ? 'on' : ''}" data-act="tab" data-t="${x[0]}">${x[1]}</button>`).join('')}<input type="search" data-filter placeholder="Cari di tabel…" aria-label="Cari di tabel" style="margin-top:8px;min-width:140px"><button type="button" data-act="csv">Ekspor CSV</button></aside><div>${h}</div></div>`;
 }
 const fail = r => `<div class="card err">${esc(r.message)}</div>`;
 
@@ -220,3 +220,12 @@ document.addEventListener('change', e => { const s = e.target.closest('[data-kon
 document.addEventListener('click', async e => { const b = e.target.closest('[data-act=lap]'); if (!b) return; const bl = $('#lapBulan').value; if (!bl) return toast('Pilih bulan terlebih dahulu', true);
   b.disabled = true; toast('Menyusun laporan…'); const r = await Api.post('laporan.pdf', {bulan:bl}); b.disabled = false; if (!r.success) return toast(r.message, true);
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([Uint8Array.from(atob(r.data.b64), c => c.charCodeAt(0))], {type:'application/pdf'})); a.download = r.data.nama; a.click(); toast('Laporan diunduh'); });
+
+document.addEventListener('input', e => { if (!e.target.matches('[data-filter]')) return; const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.tbl tbody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (!b) return;
+  if (b.dataset.act === 'backup') aksi('cadangan.sekarang', {}, 'Cadangan dibuat di Drive');
+  if (b.dataset.act === 'csv') { const t = document.querySelector('.tbl'); if (!t) return toast('Tidak ada tabel untuk diekspor', true);
+    const cell = c => '"' + c.textContent.trim().replace(/\s+/g, ' ').replace(/^([=+\-@])/, "'$1").replace(/"/g, '""') + '"';
+    const csv = [...t.rows].filter(r => r.style.display !== 'none').map(r => [...r.cells].map(cell).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type:'text/csv'})); a.download = 'simas-' + (tab || 'data') + '.csv'; a.click(); } });
