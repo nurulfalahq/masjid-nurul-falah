@@ -5,25 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://script.google.com https://script.googleusercontent.com; frame-src https://accounts.google.com; img-src 'self' data: blob: https://lh3.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
 <!-- Hak Cipta © 2026 Arraihan Academy. Seluruh hak dilindungi. Lihat LICENSE. -->
 <title>SIMAS Nurul Falah — Sistem Informasi Masjid</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
+<a class="skip" href="#view">Lewati ke konten</a>
 <header class="bar">
   <a class="brand" href="#beranda"><span class="logo">NF</span><span>SIMAS Nurul Falah<small>Sistem Informasi Masjid</small></span></a>
   <nav id="nav">
-    <a href="#beranda">Beranda</a><a href="#jadwal">Jadwal</a><a href="#khutbah">Khutbah Jumat</a><a href="#agenda">Agenda</a><a href="#kas">Transparansi Kas</a>
-    <a href="#panel" class="cta" id="navPanel">Masuk Staf</a>
+    <a href="#beranda" data-ic="🏠">Beranda</a><a href="#jadwal" data-ic="📅">Jadwal</a><a href="#khutbah" data-ic="🕌">Khutbah Jumat</a><a href="#agenda" class="hide-m">Agenda</a><a href="#kas" data-ic="💰">Transparansi Kas</a>
+    <a href="#panel" class="cta" id="navPanel" data-ic="🔐">Masuk Staf</a>
   </nav>
+  <button id="theme" class="ib" type="button" aria-label="Ganti tema terang atau gelap">🌓</button>
 </header>
 <main id="view" aria-live="polite"><p class="muted pad">Memuat…</p></main>
 <div id="toast" role="status"></div>
-<footer class="foot">© 2026 DKM Masjid Nurul Falah. Transparan, akuntabel, dan melayani umat.<br>Dikembangkan oleh Arraihan Academy · <a href="LICENSE">Lisensi</a></footer>
+<footer class="foot"><div class="fcols" id="footCols"></div><p class="cp">© 2026 DKM Masjid Nurul Falah. Transparan, akuntabel, dan melayani umat.<br>Dikembangkan oleh Arraihan Academy · <a href="LICENSE">Lisensi</a></p></footer>
 <script src="js/config.js"></script>
-<script src="js/api.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="js/api.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>
