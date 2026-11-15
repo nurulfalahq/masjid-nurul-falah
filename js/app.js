@@ -108,10 +108,10 @@ async function panel(){
   }
   if (tab === 'kas' && has('pengurus','bendahara')) {
     const k = await Api.post('kas.daftar'); if (!k.success) return fail(k);
-    h += `<h2 style="margin-top:24px">Kas</h2>`;
+    h += `<h2 style="margin-top:24px">Kas</h2><div class="card" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px"><label>Laporan bulan<input type="month" id="lapBulan" value="${new Date().toISOString().slice(0,7)}"></label><button class="btn o" type="button" data-act="lap">Unduh laporan PDF</button></div>`;
     if (has('bendahara')) h += `<form class="card" id="fKas"><div class="row"><label>Tanggal<input type="date" name="tanggal" required></label>
       <label>Jenis<select name="jenis"><option>Masuk</option><option>Keluar</option></select></label><label>Kategori<input name="kategori" required maxlength="60" placeholder="Infaq Jumat, Listrik, …"></label>
-      <label>Nominal (Rp)<input type="number" name="nominal" min="1" required></label></div><label>Keterangan<input name="keterangan" maxlength="200"></label><label>Foto bukti / nota (wajib untuk pengeluaran)<input type="file" name="bukti" accept="image/*"></label>
+      <label>Nominal (Rp)<input type="number" name="nominal" min="1" required></label></div><label>Keterangan<input name="keterangan" maxlength="200"></label><label>Email donatur (opsional, untuk tanda terima)<input type="email" name="email_donatur" maxlength="100"></label><label>Foto bukti / nota (wajib untuk pengeluaran)<input type="file" name="bukti" accept="image/*"></label>
       <button class="btn" type="submit">Simpan transaksi</button><span class="muted">Pengeluaran di atas Rp 1.000.000 menunggu persetujuan pengurus.</span></form>`;
     h += k.data.length ? `<div class="wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Tanggal</th><th>Kategori</th><th class="r">Nominal</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${k.data.map(x =>
       `<tr><td>${esc(tgl(x.tanggal))}</td><td><span class="pill ${esc(x.jenis)}">${esc(x.jenis)}</span> ${esc(x.kategori)}<br><span class="muted">${esc(x.keterangan)}</span></td>
@@ -216,3 +216,7 @@ document.addEventListener('click', async e => { const b = e.target.closest('[dat
   if (a === 'jhp') { const r = await Api.post('jamaah.hp', {id:b.dataset.id}); if (!r.success) return toast(r.message, true); b.previousElementSibling.textContent = r.data.hp || '—'; b.remove(); }
   if (a === 'jedit') { const f = $('#fJamaah'); f.querySelector('[name=id]').value = b.dataset.id; f.nama.value = b.dataset.n; f.alamat.value = b.dataset.a; f.status.value = b.dataset.s; f.catatan.value = b.dataset.c; f.hp.value = ''; f.scrollIntoView({behavior:'smooth'}); } });
 document.addEventListener('change', e => { const s = e.target.closest('[data-kond]'); if (s) aksi('inventaris.kondisi', {id:s.dataset.kond, kondisi:s.value}, 'Kondisi diperbarui'); });
+
+document.addEventListener('click', async e => { const b = e.target.closest('[data-act=lap]'); if (!b) return; const bl = $('#lapBulan').value; if (!bl) return toast('Pilih bulan terlebih dahulu', true);
+  b.disabled = true; toast('Menyusun laporan…'); const r = await Api.post('laporan.pdf', {bulan:bl}); b.disabled = false; if (!r.success) return toast(r.message, true);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([Uint8Array.from(atob(r.data.b64), c => c.charCodeAt(0))], {type:'application/pdf'})); a.download = r.data.nama; a.click(); toast('Laporan diunduh'); });
