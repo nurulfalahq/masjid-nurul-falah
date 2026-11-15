@@ -1,0 +1,29 @@
+/* Hak Cipta © 2026 Arraihan Academy. Seluruh hak dilindungi. Lihat LICENSE. */
+:root{--g:#0B5D3B;--gd:#063D27;--gs:#E8F5EE;--au:#C9A227;--aus:#F6EBC8;--aut:#8A6D0B;--bg:#F7FAF7;--tx:#1F2937;--mu:#6B7280;--bd:#D9E6DE;--er:#B91C1C}
+*{box-sizing:border-box}body{margin:0;font:15px/1.55 Inter,system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+h1,h2,h3{font-family:'Plus Jakarta Sans',Inter,sans-serif;letter-spacing:-.01em;margin:0 0 .5rem}h1{font-size:2rem;line-height:1.2}h2{font-size:1.25rem}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.brand{display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--gd);font:700 1rem 'Plus Jakarta Sans',sans-serif}.brand small{display:block;font:400 .72rem Inter;color:var(--mu)}
+.logo{background:var(--g);color:#fff;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:.9rem}
+nav{display:flex;gap:4px;flex-wrap:wrap}nav a{padding:8px 12px;border-radius:10px;text-decoration:none;color:var(--tx);font-weight:500}nav a.on{box-shadow:inset 0 -2px var(--au)}nav a:hover{background:var(--gs)}
+nav a.cta{background:var(--g);color:#fff}nav a.cta:hover{background:var(--gd)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--au);outline-offset:2px}
+main{max-width:1100px;margin:0 auto;padding:20px}.pad{padding:40px 0}.muted{color:var(--mu)}
+.hero{background:linear-gradient(135deg,var(--gd),var(--g));color:#fff;border-radius:16px;padding:32px;margin-bottom:20px}.hero p{color:#ffffffcc;max-width:55ch}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:#fff;border:1px solid var(--bd);border-radius:16px;padding:18px;box-shadow:0 4px 20px -2px #063d270f}.card.key{background:var(--g);color:#fff;border:0}
+.num{font:600 1.5rem 'JetBrains Mono',ui-monospace,monospace;margin:.2rem 0}.card.key .muted{color:#ffffffb3}.in{color:var(--g)}.out{color:var(--er)}
+.btn{display:inline-block;border:0;border-radius:10px;padding:10px 16px;font:600 .9rem Inter;cursor:pointer;background:var(--au);color:var(--gd);text-decoration:none}.btn:hover{background:#B8921F}
+.btn.o{background:#fff;border:1.5px solid var(--g);color:var(--g)}.btn.d{background:var(--er);color:#fff}.btn.s{padding:5px 10px;font-size:.8rem}
+.tbl{width:100%;border-collapse:collapse;background:#fff}.tbl th{background:var(--gs);color:var(--gd);font-size:.75rem;text-align:left;padding:10px;text-transform:uppercase;letter-spacing:.03em}
+.tbl td{padding:10px;border-top:1px solid var(--bd);vertical-align:top}.tbl tr:hover td{background:#F9FCFA}.wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:16px}.r{text-align:right;font-family:ui-monospace,monospace}
+.pill{display:inline-block;border-radius:99px;padding:2px 10px;font-size:.75rem;font-weight:600;background:#F1F5F9;color:#475569}
+.Disetujui,.Hadir,.Masuk{background:#DCFCE7;color:#166534}.Menunggu{background:#FEF9C3;color:#854D0E}.Ditolak,.Dibatalkan,.Berhalangan{background:#FEE2E2;color:#991B1B}
+form.card{display:grid;gap:12px}label{font-weight:500;font-size:.85rem;display:grid;gap:4px}
+input,select,textarea{font:inherit;border:1px solid var(--bd);border-radius:8px;padding:9px;background:#fff;width:100%}input:focus,select:focus,textarea:focus{border-color:var(--g)}
+.row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.tabs{display:flex;gap:8px;margin:16px 0}.tabs button{flex:0}
+.ann{border-left:4px solid var(--bd)}.ann.pen{border-left-color:var(--au);background:var(--aus)}.err{color:var(--er);font-weight:500}
+#toast{position:fixed;right:16px;bottom:16px;background:var(--gd);color:#fff;padding:12px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:80vw}#toast.show{opacity:1}#toast.bad{background:var(--er)}
+.foot{text-align:center;color:var(--mu);font-size:.8rem;padding:24px}.skel{height:70px;border-radius:12px;background:linear-gradient(90deg,var(--gs),#fff,var(--gs));background-size:200% 100%;animation:s 1.2s infinite}
+@keyframes s{to{background-position:-200% 0}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:600px){h1{font-size:1.5rem}.hero{padding:22px}main{padding:14px}}
