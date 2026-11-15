@@ -7,6 +7,18 @@ const me = () => { try { return JSON.parse(sessionStorage.getItem('simas_u')); }
 const has = (...r) => (me() ? me().peran : []).some(x => r.includes(x));
 function toast(m, bad){ const t = $('#toast'); t.textContent = m; t.className = 'show' + (bad ? ' bad' : ''); setTimeout(() => t.className = '', 3500); }
 const skel = () => '<div class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>';
+const img = id => /^[\w-]{10,}$/.test(id || '') ? 'https://lh3.googleusercontent.com/d/' + id : '';
+let tab = sessionStorage.getItem('tab');
+function tabs(){ const t = [];
+  if (has('pengurus','petugas_jadwal','petugas_ibadah')) t.push(['jadwal','Jadwal']);
+  if (has('pengurus','bendahara')) t.push(['kas','Kas']);
+  if (has('pengurus','petugas_jadwal')) t.push(['pengumuman','Pengumuman']);
+  if (has('pengurus')) t.push(['pengguna','Pengguna'], ['pengaturan','Pengaturan']);
+  return t; }
+function compress(file){ return new Promise((ok,no) => { const im = new Image(); im.onload = () => {
+  const sc = Math.min(1, 1200 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = im.width * sc; c.height = im.height * sc;
+  c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL('image/jpeg', .8).split(',')[1]); }; im.onerror = no; im.src = URL.createObjectURL(file); }); }
+function brand(d){ const s = d.pengaturan || {}; if (img(s.logo_id)) $('.logo').innerHTML = `<img src="${img(s.logo_id)}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`; }
 let pub = null;
 async function loadPub(){ if (!pub) { const r = await Api.get('publik.beranda'); if (!r.success) throw new Error(r.message); pub = r.data; } return pub; }
 
@@ -19,7 +31,7 @@ const kasCards = k => `<div class="grid"><div class="card key"><div class="muted
   <div class="card"><div class="muted">Pengeluaran bulan ini</div><div class="num out">− ${rp(k.keluarBulanIni)}</div></div></div>`;
 
 const routes = {
-  async beranda(){ const d = await loadPub(); return `<section class="hero"><h1>Selamat datang di Masjid Nurul Falah</h1><p>Jadwal imam, khatib, muadzin, dan penceramah serta laporan kas masjid, terbuka untuk seluruh jamaah.</p><a class="btn" href="#jadwal">Lihat jadwal ibadah</a></section>
+  async beranda(){ const d = await loadPub(); return `<section class="hero" ${img((d.pengaturan||{}).foto_masjid_id) ? `style="background:linear-gradient(135deg,#063d27ee,#0b5d3bcc),url(${img(d.pengaturan.foto_masjid_id)}) center/cover"` : ''}><h1>Selamat datang di ${esc((d.pengaturan||{}).nama || 'Masjid Nurul Falah')}</h1><p>Jadwal imam, khatib, muadzin, dan penceramah serta laporan kas masjid, terbuka untuk seluruh jamaah.</p><a class="btn" href="#jadwal">Lihat jadwal ibadah</a></section>
     <div class="grid"><div><h2>Jadwal terdekat</h2>${jadwalRows(d.jadwal.slice(0,5))}</div>
     <div><h2>Pengumuman</h2>${d.pengumuman.length ? d.pengumuman.slice(0,4).map(p => `<div class="card ann ${p.penting === 'ya' ? 'pen' : ''}"><b>${esc(p.judul)}</b><div class="muted">${esc(tgl(p.tanggal))}</div><p>${esc(p.isi)}</p></div>`).join('') : '<div class="card muted">Belum ada pengumuman.</div>'}</div></div>
     <h2 style="margin-top:24px">Transparansi kas</h2>${kasCards(d.kas)}`; },
@@ -50,7 +62,8 @@ function login(){
 async function panel(){
   const u = me(); let h = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><h1>Assalamu'alaikum, ${esc(u.nama)}</h1>
     <span class="muted">${u.peran.map(esc).join(' · ')}</span></div><button class="btn o" data-act="keluar">Keluar</button></div>`;
-  if (has('pengurus','petugas_jadwal','petugas_ibadah')) {
+  const T = tabs(); if (!T.some(x => x[0] === tab)) tab = T.length ? T[0][0] : '';
+  if (tab === 'jadwal' && has('pengurus','petugas_jadwal','petugas_ibadah')) {
     const j = await Api.post('jadwal.daftar'); if (!j.success) return fail(j);
     h += `<h2 style="margin-top:24px">Jadwal</h2>`;
     if (has('pengurus','petugas_jadwal')) h += `<form class="card" id="fJadwal"><div class="row">
@@ -62,7 +75,7 @@ async function panel(){
       `<tr><td>${esc(tgl(x.tanggal))} ${esc(x.waktu)}</td><td>${esc(x.jenis)}<br><span class="muted">${esc([x.imam,x.khatib,x.muadzin,x.penceramah].filter(Boolean).join(', '))}</span></td>
       <td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td><button class="btn s" data-act="konf" data-id="${esc(x.id)}" data-s="Hadir">Hadir</button> <button class="btn s o" data-act="konf" data-id="${esc(x.id)}" data-s="Berhalangan">Berhalangan</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="card muted" style="margin-top:12px">Belum ada jadwal mendatang.</div>';
   }
-  if (has('pengurus','bendahara')) {
+  if (tab === 'kas' && has('pengurus','bendahara')) {
     const k = await Api.post('kas.daftar'); if (!k.success) return fail(k);
     h += `<h2 style="margin-top:24px">Kas</h2>`;
     if (has('bendahara')) h += `<form class="card" id="fKas"><div class="row"><label>Tanggal<input type="date" name="tanggal" required></label>
@@ -74,7 +87,17 @@ async function panel(){
       <td class="r">${rp(x.nominal)}</td><td><span class="pill ${esc(x.status)}">${esc(x.status)}</span></td><td>${x.status === 'Menunggu' && has('pengurus') ? `<button class="btn s" data-act="putus" data-id="${esc(x.id)}" data-p="Setujui">Setujui</button> <button class="btn s d" data-act="putus" data-id="${esc(x.id)}" data-p="Tolak">Tolak</button>` : ''}
       ${x.status !== 'Dibatalkan' && x.status !== 'Ditolak' ? `<button class="btn s o" data-act="batal" data-id="${esc(x.id)}">Batalkan</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="card muted" style="margin-top:12px">Belum ada transaksi.</div>';
   }
-  return h;
+  const H = t => `<h2 style="margin-top:24px">${t}</h2>`;
+  if (tab === 'pengumuman') h += H('Pengumuman') + `<form class="card" id="fPeng"><label>Judul<input name="judul" required maxlength="120"></label><label>Isi<textarea name="isi" rows="4" required maxlength="290"></textarea></label><label><span><input type="checkbox" name="penting" style="width:auto"> Tandai sebagai penting</span></label><button class="btn" type="submit">Terbitkan</button></form>`;
+  if (tab === 'pengguna') { const r = await Api.post('pengguna.daftar'); if (!r.success) return fail(r);
+    h += H('Pengguna &amp; peran') + `<form class="card" id="fUser"><div class="row"><label>Email Google<input type="email" name="email" required></label><label>Nama (sama persis dengan di jadwal)<input name="nama" required maxlength="80"></label><label>Status<select name="aktif"><option value="ya">Aktif</option><option value="tidak">Nonaktif</option></select></label></div>
+      <div class="row">${[['pengurus','Pengurus/DKM'],['bendahara','Bendahara'],['petugas_jadwal','Petugas Jadwal'],['petugas_ibadah','Imam/Khatib/Muadzin/Penceramah']].map(x => `<label><span><input type="checkbox" name="peran" value="${x[0]}" style="width:auto"> ${x[1]}</span></label>`).join('')}</div><button class="btn" type="submit">Simpan pengguna</button></form>
+      <div class="wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Peran</th><th>Status</th><th></th></tr></thead><tbody>${r.data.map(x => `<tr><td>${esc(x.nama)}</td><td>${esc(x.email)}</td><td>${esc(x.peran)}</td><td><span class="pill ${x.aktif === 'ya' ? 'Disetujui' : 'Dibatalkan'}">${x.aktif === 'ya' ? 'Aktif' : 'Nonaktif'}</span></td><td><button class="btn s o" data-act="edit" data-e="${esc(x.email)}" data-n="${esc(x.nama)}" data-p="${esc(x.peran)}" data-a="${esc(x.aktif)}">Ubah</button></td></tr>`).join('')}</tbody></table></div>`; }
+  if (tab === 'pengaturan') { const r = await Api.post('pengaturan.daftar'); if (!r.success) return fail(r); const c = r.data;
+    const up = (k,t) => `<div class="card"><b>${t}</b>${img(c[k + '_id']) ? `<p><img src="${img(c[k + '_id'])}" alt="${t}" style="max-width:100%;max-height:140px;border-radius:10px"></p>` : '<p class="muted">Belum ada gambar.</p>'}<input type="file" accept="image/jpeg,image/png,image/webp" data-up="${k}"><div class="muted">JPG/PNG/WebP, otomatis dikecilkan.</div></div>`;
+    h += H('Pengaturan masjid') + `<form class="card" id="fSet"><div class="row"><label>Nama masjid<input name="nama" value="${esc(c.nama)}" maxlength="80"></label><label>Telepon<input name="telepon" value="${esc(c.telepon)}" maxlength="30"></label><label>Batas persetujuan (Rp)<input type="number" name="ambang" value="${esc(c.ambang)}" min="1"></label></div><label>Alamat<input name="alamat" value="${esc(c.alamat)}" maxlength="200"></label><button class="btn" type="submit">Simpan pengaturan</button></form>
+      <div class="grid" style="margin-top:12px">${up('logo','Logo masjid')}${up('foto_masjid','Foto masjid (latar beranda)')}</div>`; }
+  return `<div class="shell"><aside class="side">${T.map(x => `<button class="${x[0] === tab ? 'on' : ''}" data-act="tab" data-t="${x[0]}">${x[1]}</button>`).join('')}</aside><div>${h}</div></div>`;
 }
 const fail = r => `<div class="card err">${esc(r.message)}</div>`;
 
@@ -88,15 +111,24 @@ document.addEventListener('click', e => {
   if (a === 'batal') { const c = prompt('Alasan pembatalan (wajib diisi):'); if (c) aksi('kas.batalkan', {id:b.dataset.id, catatan:c}, 'Transaksi dibatalkan'); }
 });
 document.addEventListener('submit', e => {
-  e.preventDefault(); const f = e.target, d = Object.fromEntries(new FormData(f)); const btn = f.querySelector('button'); btn.disabled = true;
-  (f.id === 'fJadwal' ? aksi('jadwal.simpan', d, 'Jadwal tersimpan') : aksi('kas.simpan', d, 'Transaksi tersimpan')).finally(() => btn.disabled = false);
+  e.preventDefault(); const f = e.target, fd = new FormData(f), d = Object.fromEntries(fd); const btn = f.querySelector('button'); btn.disabled = true;
+  d.peran = fd.getAll('peran'); d.penting = fd.get('penting') ? 'ya' : '';
+  const m = {fJadwal:['jadwal.simpan','Jadwal tersimpan'], fKas:['kas.simpan','Transaksi tersimpan'], fPeng:['pengumuman.simpan','Pengumuman terbit'], fUser:['pengguna.simpan','Pengguna tersimpan'], fSet:['pengaturan.simpan','Pengaturan tersimpan']}[f.id];
+  aksi(m[0], d, m[1]).finally(() => btn.disabled = false);
 });
+document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (!b) return;
+  if (b.dataset.act === 'tab') { tab = b.dataset.t; sessionStorage.setItem('tab', tab); render(); }
+  if (b.dataset.act === 'edit') { const f = $('#fUser'); f.email.value = b.dataset.e; f.nama.value = b.dataset.n; f.aktif.value = b.dataset.a;
+    f.querySelectorAll('[name=peran]').forEach(c => c.checked = b.dataset.p.split(',').includes(c.value)); f.scrollIntoView({behavior:'smooth'}); } });
+document.addEventListener('change', async e => { const i = e.target.closest('[data-up]'); if (!i || !i.files[0]) return;
+  try { toast('Mengunggah…'); await aksi('gambar.unggah', {jenis:i.dataset.up, mime:'image/jpeg', b64:await compress(i.files[0])}, 'Gambar tersimpan'); } catch (x) { toast('Gambar tidak dapat dibaca', true); } });
 
 async function render(){
   const name = (location.hash.slice(1) || 'beranda'), fn = routes[name] || routes.beranda;
   document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + name));
   $('#navPanel').textContent = me() ? 'Panel Staf' : 'Masuk Staf';
   view.innerHTML = skel();
+  loadPub().then(brand).catch(() => {});
   try { view.innerHTML = await fn(); } catch (err) { view.innerHTML = '<div class="card err">Gagal memuat data. Periksa koneksi lalu muat ulang halaman.</div>'; }
 }
 window.addEventListener('hashchange', render);
