@@ -50,6 +50,11 @@ function bars(d){ const W = 520, H = 190, m = Math.max(1, ...d.flatMap(x => [x.m
 function jumatCard(d){ const f = d.jadwal.filter(j => j.jenis === 'Sholat Jumat')[0]; if (!f) return '';
   const ft = d.foto && d.foto[f.khatib] ? img(d.foto[f.khatib]) : '';
   return `<section class="card" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--au);margin-bottom:20px">${ft ? `<img class="av" src="${ft}" alt="Foto khatib">` : ''}<div style="flex:1;min-width:220px"><span class="pill Menunggu">Khutbah Jumat · ${esc(tgl(f.tanggal))} · ${esc(f.waktu)} WIB</span><h2 style="margin-top:8px">${esc(f.tema || 'Tema akan diumumkan')}</h2><p class="muted">Khatib: ${esc(f.khatib)} · Imam: ${esc(f.imam)} · Muadzin: ${esc(f.muadzin)}</p><a class="btn o s" href="#khutbah">Lihat jadwal Jumat</a></div></section>`; }
+function cardify(){ document.querySelectorAll('.tbl').forEach(t => { if (!t.tHead) return; const h = [...t.tHead.rows[0].cells].map(c => c.textContent.trim());
+  t.querySelectorAll('tbody tr').forEach(r => [...r.cells].forEach((c,i) => c.setAttribute('data-l', h[i] || ''))); }); }
+function kajianSec(d){ const k = d.jadwal.filter(j => j.jenis === 'Kajian Rutin').slice(0,6);
+  return (k.length ? `<h2 style="margin-top:20px">Kajian rutin</h2><div class="grid">${k.map(j => `<div class="card"><span class="pill Menunggu">${esc(tgl(j.tanggal))} · ${esc(j.waktu)} WIB</span><h2 style="margin-top:8px">${esc(j.tema || j.jenis)}</h2><p class="muted">${esc(j.penceramah || j.imam)}</p></div>`).join('')}</div>` : '')
+  + `<div class="card" style="margin-top:16px;background:var(--gs)"><b>Ketentuan kehadiran jamaah</b><p style="margin:.4rem 0 0">Seluruh jadwal terbuka untuk umum. Mohon hadir lebih awal, membawa mushaf pribadi, dan memarkir kendaraan dengan tertib.</p></div>`; }
 let pub = null;
 async function loadPub(){ if (!pub) { const r = await Api.get('publik.beranda'); if (!r.success) throw new Error(r.message); pub = r.data; } return pub; }
 
@@ -66,7 +71,7 @@ const routes = {
     <div class="grid"><div><h2>Jadwal terdekat</h2>${jadwalRows(d.jadwal.slice(0,5))}</div>
     <div><h2>Pengumuman</h2>${d.pengumuman.length ? d.pengumuman.slice(0,4).map(p => `<div class="card ann ${p.penting === 'ya' ? 'pen' : ''}"><b>${esc(p.judul)}</b><div class="muted">${esc(tgl(p.tanggal))}</div><p>${esc(p.isi)}</p></div>`).join('') : '<div class="card muted">Belum ada pengumuman.</div>'}</div></div>
     <h2 style="margin-top:24px">Transparansi kas</h2>${kasCards(d.kas)}`; },
-  async jadwal(){ const d = await loadPub(); return `<h1>Jadwal ibadah &amp; kajian</h1>${papan(d.pengaturan)}<h2 style="margin-top:20px">Jadwal petugas</h2>${jadwalRows(d.jadwal)}`; },
+  async jadwal(){ const d = await loadPub(); return `<h1>Jadwal ibadah &amp; kajian</h1>${papan(d.pengaturan)}<h2 style="margin-top:20px">Jadwal petugas</h2>${jadwalRows(d.jadwal)}${kajianSec(d)}`; },
   async kas(){ const d = await loadPub(); return `<h1>Transparansi kas masjid</h1><p class="muted">Ringkasan hanya menampilkan total. Rincian transaksi dan nama donatur dikelola bendahara.</p>${kasCards(d.kas)}<div class="card" style="margin-top:16px"><b>Kas 6 bulan terakhir</b>${bars(d.kas.bulanan || [])}</div>`; },
   async khutbah(){ const d = await loadPub(), l = d.jadwal.filter(j => j.jenis === 'Sholat Jumat'), f = l[0], ft = n => (d.foto && d.foto[n]) ? img(d.foto[n]) : '';
     return `<h1>Khutbah Jumat</h1>` + (f ? `<section class="hero" style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">${ft(f.khatib) ? `<img class="av" src="${ft(f.khatib)}" alt="Foto khatib">` : ''}<div><span class="pill Menunggu">${esc(tgl(f.tanggal))} · ${esc(f.waktu)} WIB</span><h2 style="margin-top:8px">${esc(f.tema || 'Tema akan diumumkan')}</h2><p>Khatib: ${esc(f.khatib)}<br>Imam: ${esc(f.imam)}<br>Muadzin: ${esc(f.muadzin)}</p></div></section><h2>Jadwal berikutnya</h2>${jadwalRows(l.slice(1))}` : '<div class="card muted">Belum ada jadwal sholat Jumat.</div>'); },
@@ -195,7 +200,7 @@ async function render(){
   $('#navPanel').textContent = me() ? 'Panel Staf' : 'Masuk Staf';
   view.innerHTML = skel();
   loadPub().then(brand).catch(() => {});
-  try { view.innerHTML = await fn(); } catch (err) { view.innerHTML = '<div class="card err">Gagal memuat data. Periksa koneksi lalu muat ulang halaman.</div>'; }
+  try { view.innerHTML = await fn(); cardify(); } catch (err) { view.innerHTML = '<div class="card err">Gagal memuat data. Periksa koneksi lalu muat ulang halaman.</div>'; }
 }
 window.addEventListener('hashchange', render);
 const gis = document.createElement('script'); gis.src = 'https://accounts.google.com/gsi/client'; gis.async = true; document.head.appendChild(gis);

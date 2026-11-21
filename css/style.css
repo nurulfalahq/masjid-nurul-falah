@@ -49,3 +49,11 @@ nav a{color:var(--tx)}nav a.cta{color:#fff}
  nav a.cta{background:none;color:var(--g)}nav a.on{color:var(--g);box-shadow:none;font-weight:700}nav a.hide-m{display:none}
  .side{position:sticky;top:56px;z-index:4}
 }
+
+@media(max-width:700px){
+ .wrap{border:0;overflow:visible}.tbl thead{display:none}.tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:100%;background:none}
+ .tbl tr{border:1px solid var(--bd);border-radius:12px;margin:10px 0;padding:6px 0;background:var(--sf)}.tbl tr:hover td{background:none}
+ .tbl td{border:0;padding:6px 12px;display:flex;justify-content:space-between;gap:12px;text-align:right}
+ .tbl td::before{content:attr(data-l);font-weight:600;color:var(--mu);text-align:left;font-size:.75rem;text-transform:uppercase;flex:0 0 36%}
+ .tbl td:empty{display:none}
+}
